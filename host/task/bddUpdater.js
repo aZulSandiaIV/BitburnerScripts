@@ -20,7 +20,7 @@ export async function main(ns) {
             if(!servidoresVisitados.some(s => s.nombre === vecino)){
                 servidoresVisitados.push({ nombre: vecino });
 
-                if(await atacar(vecino) === true){
+                if(await atacar(vecino) === true && ns.getHackingLevel() >= ns.getServerRequiredHackingLevel(vecino)){
                     servidoresBDD.push({    nombre: vecino,
                                             dineroMaximo: ns.getServerMaxMoney(vecino), 
                                             dineroActual: ns.getServerMoneyAvailable(vecino),
@@ -42,11 +42,11 @@ export async function main(ns) {
         const puertosNecesarios = ns.getServerNumPortsRequired(server);
         let puertosRealizados = 0;
 
-        if(ns.fileExists("BruteSSH.exe", "home"))   puertosRealizados++;
-        if(ns.fileExists("FTPCrack.exe", "home"))   puertosRealizados++;
-        if(ns.fileExists("relaySMTP.exe", "home"))  puertosRealizados++;
-        if(ns.fileExists("HTTPWorm.exe", "home"))   puertosRealizados++;
-        if(ns.fileExists("SQLInject.exe", "home"))  puertosRealizados++;
+        if(ns.fileExists("BruteSSH.exe", "home"))   puertosRealizados++; ns.brutessh(server);
+        if(ns.fileExists("FTPCrack.exe", "home"))   puertosRealizados++; ns.ftpcrack(server);
+        if(ns.fileExists("relaySMTP.exe", "home"))  puertosRealizados++; ns.relaysmtp(server);
+        if(ns.fileExists("HTTPWorm.exe", "home"))   puertosRealizados++; ns.httpworm(server);
+        if(ns.fileExists("SQLInject.exe", "home"))  puertosRealizados++; ns.sqlinject(server);
 
         if(puertosRealizados < puertosNecesarios)   return false;
 
@@ -59,13 +59,13 @@ export async function main(ns) {
         await atacarVecinos();
 
         //Actualizar bdd
-        ns.write("serversBDD.txt", JSON.stringify(servidoresBDD), "w");
+        ns.write("serversBDD.json", JSON.stringify(servidoresBDD), "w");
 
         //Actualizar lista de servidores ordenados por su valor 
-        let servidoresListados = servidoresBDD.filter(s => s.dineroMaximo > 0).sort((a, b) => b.dineroMaximo - a.dineroMaximo);
+        let servidoresListados = servidoresBDD.sort((a, b) => b.dineroMaximo - a.dineroMaximo);
         let servidoresListadosTxt = servidoresListados.map(s => `\nServidor: ${s.nombre}
-                                                            \nDinero Maximo: ${s.dineroMaximo}\nDinero Actual: ${s.dineroActual}
-                                                            \nRuta: connect ${s.ruta.map(s => `connect ${s}`).join("; ")}
+                                                            \nDinero Maximo: ${s.dineroMaximo.toLocaleString()}\nDinero Actual: ${s.dineroActual.toLocaleString()}
+                                                            \nRuta: ${s.ruta.map(s => `connect ${s}`).join("; ")}
                                                             \n---------------------------------------------\n`).join("");
         ns.write("servidores-listados.txt", servidoresListadosTxt, "w");
 
