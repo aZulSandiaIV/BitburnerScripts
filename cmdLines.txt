@@ -1,0 +1,12 @@
+Listado de alias listos para ejecutar
+
+Instala las ultimas versiones del repositorio de aZulSandiaIV.
+alias updateRepo="
+wget https://raw.githubusercontent.com/aZulSandiaIV/BitburnerScripts/refs/heads/main/host/task/bddUpdater.js bddUpdater.js;
+"
+
+Limpia e inicia todas las tareas de host.
+alias startGame="
+killall;
+run bddUpdater.js
+"
