@@ -62,7 +62,13 @@ export async function main(ns) {
         ns.write("serversBDD.txt", JSON.stringify(servidoresBDD), "w");
 
         //Actualizar lista de servidores ordenados por su valor 
-        ns.write("servidores_valiosos.txt", JSON.stringify(servidoresValiosos.sort((a, b) => b.dineroMaximo - a.dineroMaximo)), "w");
+        let servidoresListados = servidoresBDD.filter(s => s.dineroMaximo > 0).sort((a, b) => b.dineroMaximo - a.dineroMaximo);
+        let servidoresListadosTxt = servidoresListados.map(s => `Servidor: ${s.nombre}
+                                                            \nDinero Maximo: ${s.dineroMaximo}
+                                                            \nDinero Actual: ${s.dineroActual}
+                                                            \nRuta: connect ${s.ruta.map(s => `connect ${s}`).join("; ")}
+                                                            \n`).join("\n");
+        ns.write("servidores-listados.txt", servidoresListadosTxt, "w");
 
         await ns.asleep(1000);
     }
