@@ -63,11 +63,10 @@ export async function main(ns) {
 
         //Actualizar lista de servidores ordenados por su valor 
         let servidoresListados = servidoresBDD.filter(s => s.dineroMaximo > 0).sort((a, b) => b.dineroMaximo - a.dineroMaximo);
-        let servidoresListadosTxt = servidoresListados.map(s => `Servidor: ${s.nombre}
-                                                            \nDinero Maximo: ${s.dineroMaximo}
-                                                            \nDinero Actual: ${s.dineroActual}
+        let servidoresListadosTxt = servidoresListados.map(s => `\nServidor: ${s.nombre}
+                                                            \nDinero Maximo: ${s.dineroMaximo}\nDinero Actual: ${s.dineroActual}
                                                             \nRuta: connect ${s.ruta.map(s => `connect ${s}`).join("; ")}
-                                                            \n`).join("\n");
+                                                            \n---------------------------------------------\n`).join("");
         ns.write("servidores-listados.txt", servidoresListadosTxt, "w");
 
         await ns.asleep(1000);
