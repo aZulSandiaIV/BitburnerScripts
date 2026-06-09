@@ -28,7 +28,7 @@ export async function main(ns) {
                                             ruta: [...camino, vecino]
                                         });
                                     
-                    atacarVecinos(vecino, [...camino, vecino]);
+                    await atacarVecinos(vecino, [...camino, vecino]);
                 }
             }
         }
@@ -63,6 +63,8 @@ export async function main(ns) {
 
         //Actualizar lista de servidores ordenados por su valor 
         ns.write("servidores_valiosos.txt", JSON.stringify(servidoresValiosos.sort((a, b) => b.dineroMaximo - a.dineroMaximo)), "w");
+
+        await ns.asleep(1000);
     }
 
 
