@@ -69,6 +69,9 @@ export async function main(ns) {
                                                             \n---------------------------------------------\n`).join("");
         ns.write("servidores-listados.txt", servidoresListadosTxt, "w");
 
+        servidoresVisitados = [ { nombre: "home" } ];
+        servidoresBDD = [];
+        
         await ns.asleep(1000);
     }
 
