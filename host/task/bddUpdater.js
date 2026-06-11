@@ -20,11 +20,12 @@ export async function main(ns) {
             if(!servidoresVisitados.some(s => s.nombre === vecino)){
                 servidoresVisitados.push({ nombre: vecino });
 
-                if(await atacar(vecino) === true && ns.getHackingLevel() >= ns.getServerRequiredHackingLevel(vecino)){
+                if(await atacar(vecino) === true){
                     servidoresBDD.push({    nombre: vecino,
                                             dineroMaximo: ns.getServerMaxMoney(vecino), 
                                             dineroActual: ns.getServerMoneyAvailable(vecino),
                                             //rootAccess: ns.hasRootAccess(vecino) ? true : false, //Por logica en este punto ya tengo root access
+                                            hackVerify : ns.getHackingLevel() >= ns.getServerRequiredHackingLevel(vecino) ? true : false,
                                             ruta: [...camino, vecino]
                                         });
                                     
@@ -65,7 +66,7 @@ export async function main(ns) {
         let servidoresListados = servidoresBDD.sort((a, b) => b.dineroMaximo - a.dineroMaximo);
         let servidoresListadosTxt = servidoresListados.map(s => `\nServidor: ${s.nombre}
                                                             \nDinero Maximo: ${s.dineroMaximo.toLocaleString()}\nDinero Actual: ${s.dineroActual.toLocaleString()}
-                                                            \nRuta: ${s.ruta.map(s => `connect ${s}`).join("; ")}
+                                                            \nRuta: ${s.ruta.map(s => `connect ${s}`).join("; ")}\nHackeable: ${s.hackVerify ? "Si" : "No"}
                                                             \n---------------------------------------------\n`).join("");
         ns.write("servidores-listados.txt", servidoresListadosTxt, "w");
 

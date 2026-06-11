@@ -8,7 +8,7 @@ export async function main(ns) {
         for(let server of bdd){
             let RAM = ns.getServerMaxRam(server.nombre) - ns.getServerUsedRam(server.nombre); 
 
-            if(ns.hackAnalyzeChance(server.nombre) > 0.9){
+            if(ns.hackAnalyzeChance(server.nombre) <= 0.75){
                 ns.scp("w.js", server.nombre, "home");
 
                 while(RAM >= ns.getScriptRam("w.js", "home")){
@@ -16,7 +16,7 @@ export async function main(ns) {
                     RAM -= ns.getScriptRam("w.js", "home");
                 }
 
-            }else if(server.dineroActual >= server.dineroMaximo * 0.75){
+            }else if(server.dineroActual <= server.dineroMaximo * 0.75){
                 ns.scp("g.js", server.nombre, "home");
 
                 while(RAM >= ns.getScriptRam("g.js", "home")){
@@ -24,7 +24,7 @@ export async function main(ns) {
                     RAM -= ns.getScriptRam("g.js", "home");
                 }
 
-            }else if(ns.hackAnalyzeChance(server.nombre) > 0.5){
+            }else if(server.hackVerify === true){
                 ns.scp("h.js", server.nombre, "home");
 
                 while(RAM >= ns.getScriptRam("h.js", "home")){
