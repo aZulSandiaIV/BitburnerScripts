@@ -17,6 +17,7 @@ export async function main(ns) {
         if(vecinos.length === 0) return;
 
         for(const vecino of vecinos){
+            if(ns.cloud.getServerNames().some(s => s === vecino)) continue;
             if(!servidoresVisitados.some(s => s.nombre === vecino)){
                 servidoresVisitados.push({ nombre: vecino });
 

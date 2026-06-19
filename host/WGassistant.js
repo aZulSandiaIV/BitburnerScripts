@@ -8,17 +8,13 @@ export async function main(ns) {
         for(let server of bdd){
             let RAM = ns.getServerMaxRam() - ns.getServerUsedRam(); 
 
-            if(ns.hackAnalyzeChance(server.nombre) <= 0.75){
-                while(RAM >= ns.getScriptRam("w.js", "home")){
-                    ns.exec("w.js", ns.getHostname(), 1, server.nombre);
-                    RAM -= ns.getScriptRam("w.js", "home");
-                }
+            if(ns.hackAnalyzeChance(server.nombre) <= 0.9){
+                let hilos = Math.floor((ns.getServerMaxRam() - ns.getServerUsedRam()) / ns.getScriptRam("w.js"));
+                ns.exec("w.js", ns.getHostname(), hilos, server.nombre)
                 await ns.sleep(ns.getWeakenTime(server.nombre) + 100);
-            }else if(server.dineroActual <= server.dineroMaximo * 0.75){
-                while(RAM >= ns.getScriptRam("g.js", "home")){
-                    ns.exec("g.js", ns.getHostname(), 1, server.nombre);
-                    RAM -= ns.getScriptRam("g.js", "home");
-                }
+            }else if(server.dineroActual <= server.dineroMaximo * 0.9){
+                let hilos = Math.floor((ns.getServerMaxRam() - ns.getServerUsedRam()) / ns.getScriptRam("g.js"));
+                ns.exec("g.js", ns.getHostname(), hilos, server.nombre)
                 await ns.sleep(ns.getGrowTime(server.nombre) + 100);
             }
 
