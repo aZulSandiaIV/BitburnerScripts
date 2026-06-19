@@ -21,47 +21,78 @@ export async function main(ns) {
     
     /** @param {informe[]} informes */
     function ataqueOptimo(informes){
-        let informesOrdenados = informes;
-        informesOrdenados.sort((s1, s2) => s1.passwordLength - s2.passwordLength);
-
-        const informesNuevos = informesOrdenados.filter(informe => ns.isRunning("timmy.js", informe.nombre));
-
-        if(informesNuevos[0].passwordLength !== 0){
-
-            const informesFiltrados = informesNuevos.filter(informe => informe.model in ["FreshInstall_1.0","DeskMemo_3.1"]);
-
-            return informesFiltrados[0];
+        // CONDICIONAL DE SEGURIDAD: Si no hay informes, salimos antes de que falle
+        if (!informes || !Array.isArray(informes) || informes.length === 0) {
+            return null;
         }
 
-        return informesNuevos[0];
+        let informesOrdenados = Array.from(informes);
+        informesOrdenados.sort((s1, s2) => s1.passwordLength - s2.passwordLength);
+
+        const informesNuevos = Array.from(informesOrdenados.filter(informe => !ns.isRunning("timmy.js", informe.nombre)));
+        
+        if(informesNuevos.length !== 0){
+            
+            if(informesNuevos[0].passwordLength !== 0){
+                const modelosAceptados = ["FreshInstall_1.0", "DeskMemo_3.1"];
+                const informesFiltrados = informesNuevos.filter(informe => modelosAceptados.includes(informe.model));
+
+                // Controlamos si realmente se encontró algún modelo compatible
+                if (informesFiltrados.length > 0) {
+                    return informesFiltrados[0];
+                }
+                
+                // Si requería contraseña pero no sabemos cómo atacarlo, 
+                // pasamos de él y devolvemos null de forma segura
+                return null; 
+            }
+
+            // Si la longitud de la contraseña es 0, lo devolvemos directo
+            return informesNuevos[0];
+        }
+
+        return null;
     }
 
-    /** @param {informe} objetivo */
+/** @param {informe} objetivo */
     async function atacarMemo(objetivo){
 
         let max = parseInt("9".repeat(objetivo.passwordLength));
         let crackeado = { success: false };
-        let isOnline = ns.dnet.getServerDetails(objetivo.nombre).isOnline;
 
-        for(let I = 0; I <= max && isOnline; I++){
-            let intento = I.toString().padStart(length, "0");
+        for(let I = 0; I <= max; I++){
+            
+            // VERIFICACIÓN PREVENTIVA: Consultamos el estado antes de interactuar con la API de login
+            let estadoActual = ns.dnet.getServerDetails(objetivo.nombre);
+            
+            // Si el servidor ya no está online o dejó de existir, abortamos inmediatamente
+            if (!estadoActual || !estadoActual.isOnline) {
+                // ns.tprint(`ALERTA: Conexión perdida con ${objetivo.nombre}. Abortando ataque.`);
+                return false; 
+            }
+
+            let intento = I.toString().padStart(objetivo.passwordLength, "0");
+            
+            // Como ya validamos que está online, ejecutamos de forma segura
             crackeado = await ns.dnet.authenticate(objetivo.nombre, intento);
             
             if(crackeado.success){
-
-                const informe = {
-                    nombre: objetivo,
+                const informeResultado = {
+                    nombre: objetivo.nombre, // Cambiado de 'objetivo' (objeto entero) a 'objetivo.nombre' (string)
                     password: intento
                 };
 
-                ns.write(`informe-${objetivo}.json`, JSON.stringify(informe), "w");
-                //Los recolectare luego con una tarea aparte para ahorrar memoria
-                return crackeado.success;
+                //ns.write(`informe-${objetivo.nombre}.json`, JSON.stringify(informeResultado), "w");
+                return true;
             } 
-
-            isOnline = ns.dnet.getServerDetails(objetivo.nombre).isOnline;
+            
+            // Añadir un micro-respiro al bucle previene que el juego se congele 
+            // por procesar miles de intentos de contraseñas por segundo
+            await ns.asleep(1); 
         }
 
+        // Si recorrió todos los números y no crackeó nada, devuelve false de forma explícita
+        return false;
     }
 
     /** Este codigo lo saque de internet para guiarme, derechos para Coolblubird
@@ -102,32 +133,58 @@ export async function main(ns) {
     }
 
     while(true){
-
         let vecinos = ns.dnet.probe();
-        let informes = Object.create(informe);
 
-        informes = vecinos.forEach(vecino => {
-            let vecinoDetalles = ns.dnet.getServerDetails(vecino)
-            informes.nombre = vecino;
-            informes.passwordLength = vecinoDetalles.passwordLength;
-            informes.type = vecinoDetalles.passwordFormat;
-            informes.model = vecinoDetalles.modelId;
-        });
+        // 1. Conseguimos los detalles, pero filtramos CUALQUIER vecino que falle
+        let informes = vecinos
+            .map(vecino => {
+                let vecinoDetalles = ns.dnet.getServerDetails(vecino);
+                
+                // Si la API del juego no devuelve detalles de este vecino, ignoramos el objeto
+                if (!vecinoDetalles) return null; 
 
+                return {
+                    nombre: vecino,
+                    passwordLength: vecinoDetalles.passwordLength,
+                    type: vecinoDetalles.passwordFormat,
+                    model: vecinoDetalles.modelId
+                };
+            })
+            // 2. TRUCO DE ORO: Eliminamos los elementos 'null' de la lista
+            .filter(informe => informe !== null); 
+
+        // Ahora, 'informes' está 100% limpio. Si no hay vecinos válidos, será un array vacío []
         let objetivo = ataqueOptimo(informes);
-        let success;
+        let success = false; 
 
-        switch (objetivo.model){
-            case "FreshInstall_1.0":
-                success = await atacarFresh(objetivo);
+        // Solo atacamos si ataqueOptimo encontró un objetivo real y válido
+        if (objetivo !== null && objetivo !== undefined) { 
             
-            case "DeskMemo_3.1":
-                success = await atacarMemo(objetivo);
+            switch (objetivo.model) {
+                case "FreshInstall_1.0":
+                    success = await atacarFresh(objetivo);
+                    break;
+                
+                case "DeskMemo_3.1":
+                    success = await atacarMemo(objetivo);
+                    break; 
+                default:
+                    success = (await ns.dnet.authenticate(objetivo.nombre, "")).success;
+            }
+
+            if(success === true){
+                infectar(objetivo.nombre);
+            }
         }
 
-        if(success === true){
-            infectar(objetivo.nombre);
+        let cache = ns.ls(ns.getHostname(), '.cache'); //Esta funcion si puede ser dirigida!
+        if(cache.length !== 0){
+            for(let file of cache){
+                ns.dnet.openCache(file);
+            }
         }
+
+        await ns.dnet.memoryReallocation(); //Esta funcion si puede ser dirigida!
 
         await ns.sleep(1000);
     }
