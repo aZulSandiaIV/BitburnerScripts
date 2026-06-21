@@ -27,7 +27,7 @@ export async function main(ns) {
                 let costoCore = ns.hacknet.getCoreUpgradeCost(I);
 
                 if(costoLvl <= presupuesto / 5) //No vale tanto la pena
-                    ns.hacknet.upgradeLevel(I, 200);
+                    ns.hacknet.upgradeLevel(I);
 
                 if(costoCore <= presupuesto * 2) //Todavia vale la pena
                     ns.hacknet.upgradeCore(I);
