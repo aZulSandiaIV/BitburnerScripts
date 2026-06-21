@@ -34,16 +34,10 @@ export async function main(ns) {
         if(informesNuevos.length !== 0){
             
             if(informesNuevos[0].passwordLength !== 0){
-                const modelosAceptados = ["FreshInstall_1.0", "DeskMemo_3.1"];
-                const informesFiltrados = informesNuevos.filter(informe => modelosAceptados.includes(informe.model));
-
-                // Controlamos si realmente se encontró algún modelo compatible
-                if (informesFiltrados.length > 0) {
-                    return informesFiltrados[0];
+                if (informesNuevos.length > 0) {
+                    return informesNuevos[0];
                 }
-                
-                // Si requería contraseña pero no sabemos cómo atacarlo, 
-                // pasamos de él y devolvemos null de forma segura
+
                 return null; 
             }
 
@@ -126,6 +120,28 @@ export async function main(ns) {
 
     }
 
+    /** Este codigo lo saque de internet para guiarme, derechos para Coolblubird
+     * @param {informe} objetivo
+     */
+    async function atacarBlare(objetivo){
+      var password = "";
+      const details = ns.dnet.getServerDetails(objetivo.nombre);
+      var hint = details.data; //this is the only thing that changes, instead of reading the hint text, we are reading the given data.
+
+      //check each character in the hint
+      for(var i = 0; i< hint.length; i++){
+        var char = hint[i];
+        //if that value is a number, then add it
+        if(/^\d$/.test(char)){
+          password = password + char;
+        }
+      }
+
+      const result = await ns.dnet.authenticate(objetivo.nombre, password);
+      ns.print(password);
+      return result.success;
+    }
+
     /** @param {string} objetivo */
     function infectar(objetivo){
         ns.scp("timmy.js", objetivo);
@@ -133,6 +149,16 @@ export async function main(ns) {
     }
 
     while(true){
+        let cache = ns.ls(ns.getHostname(), '.cache'); //Esta funcion si puede ser dirigida!
+        if(cache.length !== 0){
+            for(let file of cache){
+                ns.tprint(ns.dnet.openCache(file).message);
+            }
+        }
+
+        await ns.dnet.memoryReallocation(); //Esta funcion si puede ser dirigida!
+
+
         let vecinos = ns.dnet.probe();
 
         // 1. Conseguimos los detalles, pero filtramos CUALQUIER vecino que falle
@@ -168,23 +194,20 @@ export async function main(ns) {
                 case "DeskMemo_3.1":
                     success = await atacarMemo(objetivo);
                     break; 
+                case "CloudBlare(tm)":
+                    success = await atacarBlare(objetivo);
+                    break;
                 default:
                     success = (await ns.dnet.authenticate(objetivo.nombre, "")).success;
+            }
+            if(objetivo.type == "numeric" && success === false){
+                success = await atacarMemo(objetivo);
             }
 
             if(success === true){
                 infectar(objetivo.nombre);
             }
         }
-
-        let cache = ns.ls(ns.getHostname(), '.cache'); //Esta funcion si puede ser dirigida!
-        if(cache.length !== 0){
-            for(let file of cache){
-                ns.dnet.openCache(file);
-            }
-        }
-
-        await ns.dnet.memoryReallocation(); //Esta funcion si puede ser dirigida!
 
         await ns.sleep(1000);
     }
