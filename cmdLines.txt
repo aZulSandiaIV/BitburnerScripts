@@ -3,10 +3,23 @@ Listado de alias listos para ejecutar
 Instala las ultimas versiones del repositorio de aZulSandiaIV.
 alias updateRepo="
 wget https://raw.githubusercontent.com/aZulSandiaIV/BitburnerScripts/refs/heads/main/host/task/bddUpdater.js bddUpdater.js;
+wget https://raw.githubusercontent.com/aZulSandiaIV/BitburnerScripts/refs/heads/main/host/task/hackManager.js hackManager.js;
+wget https://raw.githubusercontent.com/aZulSandiaIV/BitburnerScripts/refs/heads/main/host/task/hacknetManager.js hacknetManager.js;
+wget https://raw.githubusercontent.com/aZulSandiaIV/BitburnerScripts/refs/heads/main/darkweb/timmy/timmy.js timmy.js;
 "
 
-Limpia e inicia todas las tareas de host.
+Limpia e inicia todas las tareas de host en orden de importancia.
 alias startGame="
 killall;
-run bddUpdater.js
+run bddUpdater.js;
+run hackManager.js;
+run hacknetManager.js;
+"
+
+Ejecuta a timmy de forma automatica (siempre que se tenga la darknet).
+alias timmyAttack="
+scp timmy.js darkweb;
+connect darkweb;
+run timmy.js;
+home;
 "
